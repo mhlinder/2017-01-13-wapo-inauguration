@@ -11,7 +11,7 @@ Justin Grieser considers historical weather data for presidential
 election.
 
 As a statistician, I think this type of small-data (twenty
-observations!) is great, and this illustrates my own believe that a
+observations!) is great, and this illustrates my own belief that a
 "good" data analysis is one that situates data within a narrative and
 doesn't mistake lots of numbers and statistical analysis for an
 interesting story.
