@@ -1,0 +1,162 @@
+---
+title: Statistical analysis of "Historically, the presidential inauguration has frequently been frigid in Washington",
+author: Henry Linder (mhlinder@gmail.com)
+date: January 13, 2017
+output: html_document
+---
+
+In
+"[Historically, the presidential inauguration has frequently been frigid in Washington](https://www.washingtonpost.com/news/capital-weather-gang/wp/2017/01/10/historically-the-presidential-inauguration-has-been-a-frigid-day-in-washington-d-c/)",
+Justin Grieser considers historical weather data for presidential
+election.
+
+As a statistician, I think this type of small-data (twenty
+observations!) is great, and this illustrates my own believe that a
+"good" data analysis is one that situates data within a narrative and
+doesn't mistake lots of numbers and statistical analysis for an
+interesting story.
+
+On the other hand, as a statistician, I can't resist the temptation to
+put to work the tools of my field. Specifically, I was curious about
+the author's assertion, "Warmer inaugurations typically favor incoming
+Republican presidents." I immediately wondered: does the data really
+support this conclusion?
+
+I wasn't able to directly download the numbers from the article, but I
+think ballpark guesses based on the bar charts are probably close
+enough for this type of back-of-the-envelope analysis.
+
+
+```{r echo = FALSE, message = FALSE}
+library(magrittr)
+library(dplyr)
+```
+
+A little setup in R gives us a nice little dataset with twenty observations.
+
+```{r}
+indata <-
+    data.frame(year  = seq(2013, 1937, by = -4),
+               party = factor(c("D", "D", "R", "R", "D", "D", "R",
+                                "R", "R", "D", "R", "R", "D", "D",
+                                "R", "R", "D", "D", "D", "D")),
+               temp  = c(40, 38, 35, 36, 34, 40, 52, 7, 55, 28, 42,
+                         35, 37, 23, 44, 48, 36, 34, 29, 33))
+indata
+```
+
+First, there's no doubt that from a *numerical* perspective,
+Republican inaugurations are warmer on average than Democratic ones.
+
+```{r}
+## Subset based on political party
+temp_D <- indata %>% filter(party == "D") %>% use_series(temp)
+temp_R <- indata %>% filter(party == "R") %>% use_series(temp)
+
+mean(temp_D)
+mean(temp_R)
+```
+
+But, is there statistical support for this conclusion?
+
+I consider graphical plots of the data for each political party
+separately.  The benchmark statistical technique to compare two
+different populations is a t-test, and for those paying attention at
+home, this type of analysis requires approximate normality of the two
+populations.
+
+As a quick reminder, a normal distribution looks like a bell-shaped curve:
+
+```{r echo = FALSE}
+plot(seq(-4, 4, length = 100) %>% dnorm, type = "l", xlab = "", ylab = "", main = "")
+```
+
+So, we can consider how well the temperature data matches this
+shape. Typically, we use a histogram for this purpose, but because the
+sample size is so small, this type of plot is difficult to read. A
+kernel density plot is slightly easier to read.
+
+```{r echo = FALSE}
+par(mfrow = c(1, 2))
+plot(density(temp_D), main = "Democratic temperatures",
+     xlab = "Temp. (F)", ylab = "")
+plot(density(temp_R), main = "Republican temperatures",
+     xlab = "Temp. (F)", ylab = "")
+```
+
+The densities don't match the normal distribution perfectly, but they
+look approximately symmetric, and the t-test is pretty robust to
+deviations from normality, i.e., it works well even when the data
+is imperfect.
+
+This conclusion is confirmed by a normal probability plot. If the data
+follow a line, the data is approximately normal. These data points do
+fall on a line for the temperature data, so normality is a reasonable assumption.
+
+```{r echo = FALSE}
+par(mfrow = c(1, 2))
+qqnorm(temp_D, main = "Temperatures at Democratic inaugurations: Normal probability plot")
+qqline(temp_D)
+qqnorm(temp_R, main = "Temperatures at Republican inaugurations: Normal probability plot")
+qqline(temp_R)
+```
+
+This paves the way for us to consider a t-test of **whether the
+average temperature at Democratic and Republican inaugurations is
+statistically different**:
+
+```{r}
+model <- t.test(temp ~ party, data = indata)
+```
+
+For a quick-and-dirty assessment, we can consider a 95% confidence
+interval for the true difference between the average temperatures for
+inaugurations of each party.
+
+```{r}
+model$conf.int
+```
+
+**If the averages are equal, their difference should equal zero**, and
+because the confidence interval includes zero, we conclude that
+**there is no statistical support for the conclusion that the average
+temperature on inauguration day is different for Republican and
+Democratic presidents.**
+
+Considering the confidence interval in this case is equivalent to
+consider the (dreaded) p-value:
+
+```{r}
+model$p.value
+```
+
+The p-value is larger than 0.05 (much larger!), so we conclude that
+the average temperatures are equal (and statistics professors
+everywhere cringed a little bit).
+
+This analysis suggests that, on average, there is *no* difference in
+average temperature, which is unsurprising---it would be strange
+indeed if the temperature somehow differed by the President's
+political party.
+
+It's also worth noting that because of the properties of the t-test,
+the small sample size means the difference between the observed
+averages would need to be very large to conclude that they are
+different, and if we were really concerned about this, I would
+recommend expand the scope of the analysis to include more historical
+data. This would require a more complicated model than a simple
+average, but might indicate additional structure in the data.
+
+Finally, the author also cites National Weather Service forecasts for
+January 20, and gives some really interesting historical
+information. It is, of course, worth noting that is is well documented
+that weather forecasts at a horizon of more than six days
+are
+[unrealiable](http://www.nws.noaa.gov/ost/climate/STIP/RServices/huq_032509.htm),
+and are useful mainly as qualitative assessments, not exact point
+estimates.
+
+That said, six of the twenty elections Grieser considers saw
+precipitation, which matches the NWS forecast of a "1 in 3 chance of
+measurable precipitation in the nation's capital on Jan. 20."
+
