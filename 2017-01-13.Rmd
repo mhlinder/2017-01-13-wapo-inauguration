@@ -1,5 +1,5 @@
 ---
-title: Statistical analysis of "Historically, the presidential inauguration has frequently been frigid in Washington",
+title: Statistical analysis of "Historically, the presidential inauguration has frequently been frigid in Washington"
 author: Henry Linder (mhlinder@gmail.com)
 date: January 13, 2017
 output: html_document
